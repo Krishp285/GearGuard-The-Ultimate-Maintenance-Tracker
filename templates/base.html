@@ -38,16 +38,32 @@ tailwind.config = {
         <div class="nav-container">
             <h1 class="logo">⚙️ GearGuard</h1>
             <ul class="nav-menu">
+              {% if session.get('role') == 'Admin' %}
                 <li><a href="{{ url_for('dashboard.dashboard') }}" class="nav-link">Dashboard</a></li>
                 <li><a href="{{ url_for('dashboard.kanban') }}" class="nav-link">Kanban Board</a></li>
                 <li><a href="{{ url_for('dashboard.calendar_view') }}" class="nav-link">Calendar</a></li>
                 <li><a href="{{ url_for('equipment.list_equipment') }}" class="nav-link">Equipment</a></li>
                 <li><a href="{{ url_for('teams.list_teams') }}" class="nav-link">Teams</a></li>
                 <li><a href="{{ url_for('requests.create') }}" class="nav-link btn-primary">+ New Request</a></li>
+                <li><a href="{{ url_for('auth.logout') }}" class="nav-link">Logout</a></li>
                 <button class="theme-toggle" aria-label="Toggle theme">
   <span class="sun-icon">☀️</span>
   <span class="moon-icon">🌙</span>
 </button>
+                {% endif %}
+                {% if session.get('role') == 'Technician' %}
+                    <li><a href="{{ url_for('dashboard.technician_dashboard') }}" class="nav-link">My Jobs</a></li>
+                    <li><a href="{{ url_for('auth.logout') }}" class="nav-link">Logout</a></li>
+                <button class="theme-toggle" aria-label="Toggle theme">
+  <span class="sun-icon">☀️</span>
+  <span class="moon-icon">🌙</span>
+</button>
+                {% endif %}
+                {% if not session.get('role') %}
+                    <li><a href="{{ url_for('auth.login') }}" class="nav-link">Login</a></li>
+                    <li><a href="{{ url_for('auth.signup') }}" class="nav-link btn-primary">Sign Up</a></li>
+                {% endif %}
+                
             </ul>
         </div>
     </nav>

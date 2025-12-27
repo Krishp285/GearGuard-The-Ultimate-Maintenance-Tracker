@@ -1,15 +1,36 @@
 """
 GearGuard - Dashboard Routes
 """
-from flask import Blueprint, render_template, request
-from models import db, MaintenanceRequest, Equipment
+from flask import Blueprint, render_template, request, session, redirect, url_for
+from models import MaintenanceRequest, Equipment
 from datetime import datetime
 from calendar import monthrange
+from functools import wraps
 
 bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
+def login_required(view_func=None, role=None):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapped(*args, **kwargs):
+            if 'user_id' not in session:
+                return redirect(url_for('auth.login'))
+
+            if role and session.get('role') != role:
+                # redirect safely based on actual role
+                if session.get('role') == 'Admin':
+                    return redirect(url_for('dashboard.dashboard'))
+                elif session.get('role') == 'Technician':
+                    return redirect(url_for('dashboard.technician_dashboard'))
+
+            return fn(*args, **kwargs)
+        return wrapped
+
+    return decorator(view_func) if view_func else decorator
+
 
 @bp.route('/kanban')
+@login_required(role='Admin')
 def kanban():
     """Kanban board view - primary screen"""
     # Get all requests organized by status
@@ -20,7 +41,7 @@ def kanban():
     }
 
     new_requests = MaintenanceRequest.query.filter_by(status='New').all()
-    new_requests.sort(key=lambda r: PRIORITY_ORDER.get(r.priority, 2))
+    new_requests.sort(key=lambda r: PRIORITY_ORDER.get(getattr(r, 'priority', 'Medium'), 2))
     
     in_progress_requests = MaintenanceRequest.query.filter_by(status='In Progress').order_by(
         MaintenanceRequest.created_at.desc()
@@ -119,6 +140,7 @@ def calendar_view():
 
 
 @bp.route('/')
+@login_required(role='Admin')
 def dashboard():
     """Main dashboard with statistics"""
     total_equipment = Equipment.query.count()
@@ -146,4 +168,23 @@ def dashboard():
         in_progress_requests=in_progress_requests,
         repaired_requests=repaired_requests,
         overdue_requests=overdue_requests
+    )
+
+
+@bp.route('/technician')
+@login_required()
+def technician_dashboard():
+    if session.get('role') != 'Technician':
+        return redirect(url_for('dashboard.dashboard'))
+
+    technician_id = session.get('technician_id')
+
+
+    assigned_requests = MaintenanceRequest.query.filter_by(
+    assigned_technician_id=technician_id).all()
+
+
+    return render_template(
+        'technician_dashboard.html',
+        assigned_requests=assigned_requests
     )

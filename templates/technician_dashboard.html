@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>My Assigned Jobs</h2>
+
+<table class="data-table">
+<tr>
+  <th>Subject</th>
+  <th>Equipment</th>
+  <th>Status</th>
+</tr>
+{% for req in assigned_requests %}
+<tr>
+  <td>{{ req.subject }}</td>
+  <td>{{ req.equipment.equipment_name }}</td>
+  <td>{{ req.status }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}
