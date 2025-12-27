@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}{% if request_obj %}Edit{% else %}Create{% endif %} Request - GearGuard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{% if request_obj %}Edit{% else %}Create New{% endif %} Maintenance Request</h2>
+</div>
+
+<div class="form-container">
+    <form method="POST" class="entity-form">
+        <div class="form-group">
+            <label for="subject">Subject *</label>
+            <input type="text" id="subject" name="subject" value="{{ request_obj.subject if request_obj else '' }}" required>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="request_type">Request Type *</label>
+                <select id="request_type" name="request_type" required onchange="toggleScheduleDate()">
+                    <option value="">Select Type</option>
+                    <option value="Corrective" {% if request_obj and request_obj.request_type == 'Corrective' %}selected{% endif %}>Corrective (Breakdown)</option>
+                    <option value="Preventive" {% if request_obj and request_obj.request_type == 'Preventive' %}selected{% endif %}>Preventive</option>
+                </select>
+            </div>
+            <div class="form-group">
+    <label for="priority">Priority *</label>
+    <select id="priority" name="priority" required>
+        <option value="High" {% if request_obj and request_obj.priority == 'High' %}selected{% endif %}>High</option>
+        <option value="Medium" {% if not request_obj or request_obj.priority == 'Medium' %}selected{% endif %}>Medium</option>
+        <option value="Low" {% if request_obj and request_obj.priority == 'Low' %}selected{% endif %}>Low</option>
+    </select>
+</div>
+
+            <div class="form-group">
+                <label for="equipment_id">Equipment *</label>
+                <select id="equipment_id" name="equipment_id" required onchange="autoFillTeam()">
+                    <option value="">Select Equipment</option>
+                    {% for equip in equipment_list %}
+                    <option value="{{ equip.id }}" {% if request_obj and request_obj.equipment_id == equip.id %}selected{% endif %}>
+                        {{ equip.equipment_name }} ({{ equip.serial_number }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="maintenance_team_id">Maintenance Team *</label>
+                <select id="maintenance_team_id" name="maintenance_team_id" required onchange="loadTechnicians()">
+                    <option value="">Select Team</option>
+                    {% for team in teams %}
+                    <option value="{{ team.id }}" {% if request_obj and request_obj.maintenance_team_id == team.id %}selected{% endif %}>
+                        {{ team.team_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="assigned_technician_id">Assigned Technician</label>
+                <select id="assigned_technician_id" name="assigned_technician_id">
+                    <option value="">Select Technician</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" id="scheduled_date_group">
+                <label for="scheduled_date">Scheduled Date</label>
+                <input type="date" id="scheduled_date" name="scheduled_date" value="{{ scheduled_date if scheduled_date else (request_obj.scheduled_date.strftime('%Y-%m-%d') if request_obj and request_obj.scheduled_date else '') }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="duration_hours">Duration (hours)</label>
+                <input type="number" step="0.5" id="duration_hours" name="duration_hours" value="{{ request_obj.duration_hours if request_obj else '' }}">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">{% if request_obj %}Update{% else %}Create{% endif %} Request</button>
+            <a href="{{ url_for('dashboard.kanban') }}" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+const assignedTechnicianId = parseInt("{{ request_obj.assigned_technician_id if request_obj and request_obj.assigned_technician_id else '' }}") || null;
+
+function autoFillTeam() {
+    const equipmentId = document.getElementById('equipment_id').value;
+    
+    if (equipmentId) {
+        fetch(`/equipment/api/details/${equipmentId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_scrapped) {
+                    alert('Cannot create request for scrapped equipment!');
+                    document.getElementById('equipment_id').value = '';
+                    return;
+                }
+                
+                // Auto-fill maintenance team
+                document.getElementById('maintenance_team_id').value = data.maintenance_team_id;
+                
+                // Load technicians and select default
+                loadTechnicians(data.default_technician_id);
+            });
+    }
+}
+
+function loadTechnicians(defaultTechId = null) {
+    const teamId = document.getElementById('maintenance_team_id').value;
+    const techSelect = document.getElementById('assigned_technician_id');
+    techSelect.innerHTML = '<option value="">Select Technician</option>';
+    
+    if (teamId) {
+        fetch(`/equipment/api/technicians/${teamId}`)
+            .then(response => response.json())
+            .then(technicians => {
+                technicians.forEach(tech => {
+                    const option = document.createElement('option');
+                    option.value = tech.id;
+                    option.textContent = tech.name;
+                    
+                    // Select default technician or previously assigned
+                    if ((defaultTechId && tech.id === defaultTechId) || (assignedTechnicianId && tech.id === assignedTechnicianId)) {
+                        option.selected = true;
+                    }
+                    
+                    techSelect.appendChild(option);
+                });
+            });
+    }
+}
+
+function toggleScheduleDate() {
+    const requestType = document.getElementById('request_type').value;
+    const scheduleDateGroup = document.getElementById('scheduled_date_group');
+    const scheduleDateInput = document.getElementById('scheduled_date');
+    
+    if (requestType === 'Preventive') {
+        scheduleDateInput.required = true;
+        scheduleDateGroup.querySelector('label').innerHTML = 'Scheduled Date *';
+    } else {
+        scheduleDateInput.required = false;
+        scheduleDateGroup.querySelector('label').innerHTML = 'Scheduled Date';
+    }
+}
+
+// Initialize on page load
+window.addEventListener('DOMContentLoaded', function() {
+    toggleScheduleDate();
+    
+    const teamSelect = document.getElementById('maintenance_team_id');
+    if (teamSelect.value) {
+        loadTechnicians();
+    }
+});
+</script>
+{% endblock %}

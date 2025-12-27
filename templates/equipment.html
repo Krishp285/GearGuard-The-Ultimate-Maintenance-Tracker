@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Equipment - GearGuard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Equipment Management</h2>
+    <a href="{{ url_for('equipment.create') }}" class="btn-primary">+ Add Equipment</a>
+</div>
+
+<!-- Filters -->
+<div class="filters">
+    <form method="GET" class="filter-form">
+        <input type="text" name="search" placeholder="Search equipment..." value="{{ current_search }}" class="filter-input">
+        
+        <select name="department" class="filter-select">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+            <option value="{{ dept }}" {% if dept == current_department %}selected{% endif %}>{{ dept }}</option>
+            {% endfor %}
+        </select>
+        
+        <select name="employee" class="filter-select">
+            <option value="">All Employees</option>
+            {% for emp in employees %}
+            <option value="{{ emp }}" {% if emp == current_employee %}selected{% endif %}>{{ emp }}</option>
+            {% endfor %}
+        </select>
+        
+        <button type="submit" class="btn-secondary">Filter</button>
+        <a href="{{ url_for('equipment.list_equipment') }}" class="btn-secondary">Clear</a>
+    </form>
+</div>
+
+<!-- Equipment Table -->
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Serial Number</th>
+                <th>Department</th>
+                <th>Assigned To</th>
+                <th>Location</th>
+                <th>Team</th>
+                <th>Status</th>
+                <th>Maintenance</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for equipment in equipment_list %}
+            <tr>
+                <td>{{ equipment.equipment_name }}</td>
+                <td>{{ equipment.serial_number }}</td>
+                <td>{{ equipment.department or '-' }}</td>
+                <td>{{ equipment.assigned_employee or '-' }}</td>
+                <td>{{ equipment.location }}</td>
+                <td>{{ equipment.maintenance_team.team_name }}</td>
+                <td>
+                    {% if equipment.is_scrapped %}
+                    <span class="status-badge scrapped">Scrapped</span>
+                    {% else %}
+                    <span class="status-badge active">Active</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('dashboard.kanban') }}?equipment={{ equipment.id }}" class="btn-maintenance">
+                        Maintenance
+                        {% set count = equipment.open_requests_count() %}
+                        {% if count > 0 %}
+                        <span class="request-badge">{{ count }}</span>
+                        {% endif %}
+                    </a>
+                </td>
+                <td class="action-buttons">
+                    <a href="{{ url_for('equipment.edit', id=equipment.id) }}" class="btn-small">Edit</a>
+                    <form method="POST" action="{{ url_for('equipment.delete', id=equipment.id) }}" style="display:inline;" onsubmit="return confirm('Delete this equipment?');">
+                        <button type="submit" class="btn-small btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="text-center">No equipment found. Add your first equipment!</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

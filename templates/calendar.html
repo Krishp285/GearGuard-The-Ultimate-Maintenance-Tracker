@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar - GearGuard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Preventive Maintenance Calendar</h2>
+</div>
+
+<div class="calendar-nav">
+    <a href="{{ url_for('dashboard.calendar_view', year=prev_year, month=prev_month) }}" class="btn-secondary">← Previous</a>
+    <h3>{{ month_name }} {{ year }}</h3>
+    
+<div class="calendar-jump">
+  <form method="GET" action="{{ url_for('dashboard.calendar_view', year=prev_year, month=prev_month) }}">
+    <select name="month">
+      {% for m in range(1, 13) %}
+      <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+        {{ ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1] }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <select name="year">
+      {% for y in range(year-10, year+11) %}
+      <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="btn-primary">Go</button>
+  </form>
+</div>
+<a href="{{ url_for('dashboard.calendar_view', year=next_year, month=next_month) }}" class="btn-secondary">Next →</a>
+
+</div>
+
+
+<div class="calendar">
+    <div class="calendar-header">
+        <div class="calendar-day-name">Sun</div>
+        <div class="calendar-day-name">Mon</div>
+        <div class="calendar-day-name">Tue</div>
+        <div class="calendar-day-name">Wed</div>
+        <div class="calendar-day-name">Thu</div>
+        <div class="calendar-day-name">Fri</div>
+        <div class="calendar-day-name">Sat</div>
+    </div>
+    
+    <div class="calendar-body">
+        {% for week in calendar_grid %}
+        <div class="calendar-row">
+            {% for day in week %}
+            <div class="calendar-cell {% if day %}has-day{% else %}empty{% endif %}" 
+                 {% if day %}data-date="{{ year }}-{{ '%02d'|format(month) }}-{{ '%02d'|format(day) }}"{% endif %}>
+                {% if day %}
+                <div class="calendar-date">
+                    <span class="day-number">{{ day }}</span>
+                    <a href="{{ url_for('requests.create', date='%s-%02d-%02d'|format(year, month, day)) }}" 
+                       class="add-request-btn" title="Add request">+</a>
+                </div>
+                
+                {% if day in requests_by_date %}
+                <div class="calendar-requests">
+                    {% for req in requests_by_date[day] %}
+                    <a class="calendar-request-item" href="{{ url_for('requests.edit', id=req.id) }}">
+                        <div class="request-time">{{ req.equipment.equipment_name }}</div>
+                        <div class="request-title">{{ req.subject }}</div>
+                        <div class="request-tech">{{ req.assigned_technician.name if req.assigned_technician else 'Unassigned' }}</div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="calendar-legend">
+    <h4>Legend:</h4>
+    <div class="legend-item">
+        <span class="legend-color preventive"></span>
+        <span>Preventive Maintenance Requests</span>
+    </div>
+    <p class="legend-note">Click on a date to create a new preventive maintenance request.</p>
+</div>
+
+{% endblock %}
+

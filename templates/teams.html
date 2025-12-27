@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Teams - GearGuard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Maintenance Teams</h2>
+    <a href="{{ url_for('teams.create') }}" class="btn-primary">+ Add Team</a>
+</div>
+
+<div class="teams-grid">
+    {% for team in teams %}
+    <div class="team-card">
+        <div class="team-header">
+            <h3>{{ team.team_name }}</h3>
+            <div class="team-actions">
+                <a href="{{ url_for('teams.edit', id=team.id) }}" class="btn-small">Edit</a>
+                <form method="POST" action="{{ url_for('teams.delete', id=team.id) }}" 
+                      style="display:inline;" onsubmit="return confirm('Delete this team?');">
+                    <button type="submit" class="btn-small btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="team-technicians">
+            <h4>Technicians ({{ team.technicians|length }})</h4>
+            <ul class="technician-list">
+                {% for tech in team.technicians %}
+                <li class="technician-item">
+                    <span>👤 {{ tech.name }}</span>
+                    <form method="POST" action="{{ url_for('teams.delete_technician', id=tech.id) }}" 
+                          style="display:inline;" onsubmit="return confirm('Remove this technician?');">
+                        <button type="submit" class="btn-icon">❌</button>
+                    </form>
+                </li>
+                {% else %}
+                <li class="text-muted">No technicians assigned</li>
+                {% endfor %}
+            </ul>
+            
+            <form method="POST" action="{{ url_for('teams.create_technician', team_id=team.id) }}" 
+                  class="add-technician-form">
+                <input type="text" name="name" placeholder="Technician name" required class="form-input-inline">
+                <button type="submit" class="btn-small">Add</button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center" style="grid-column: 1/-1; padding: 40px;">
+        <p>No teams found. Create your first maintenance team!</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

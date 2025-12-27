@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GearGuard - Maintenance Tracker{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+
+<!-- Tailwind Config -->
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui']
+      },
+      colors: {
+        bg: '#020617',
+        card: 'rgba(255,255,255,0.05)',
+        border: 'rgba(255,255,255,0.08)',
+        primary: '#3b82f6'
+      }
+    }
+  }
+}
+</script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">⚙️ GearGuard</h1>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('dashboard.dashboard') }}" class="nav-link">Dashboard</a></li>
+                <li><a href="{{ url_for('dashboard.kanban') }}" class="nav-link">Kanban Board</a></li>
+                <li><a href="{{ url_for('dashboard.calendar_view') }}" class="nav-link">Calendar</a></li>
+                <li><a href="{{ url_for('equipment.list_equipment') }}" class="nav-link">Equipment</a></li>
+                <li><a href="{{ url_for('teams.list_teams') }}" class="nav-link">Teams</a></li>
+                <li><a href="{{ url_for('requests.create') }}" class="nav-link btn-primary">+ New Request</a></li>
+                <button class="theme-toggle" aria-label="Toggle theme">
+  <span class="sun-icon">☀️</span>
+  <span class="moon-icon">🌙</span>
+</button>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Page Content -->
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Scripts -->
+    {% block scripts %}{% endblock %}
+</body>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const html = document.documentElement;
+  const toggleBtn = document.querySelector('.theme-toggle');
+  
+  // Load saved theme or default to dark
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  html.setAttribute('data-theme', savedTheme);
+  
+  // Toggle function
+  toggleBtn.addEventListener('click', () => {
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    // Optional: Add a brief class for animation (remove after 300ms)
+    html.classList.add('theme-transition');
+    setTimeout(() => html.classList.remove('theme-transition'), 300);
+  });
+});
+</script>
+</html>

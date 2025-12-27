@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{% if team %}Edit{% else %}Add{% endif %} Team - GearGuard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{% if team %}Edit{% else %}Add New{% endif %} Team</h2>
+</div>
+
+<div class="form-container">
+    <form method="POST" class="entity-form">
+        <div class="form-group">
+            <label for="team_name">Team Name *</label>
+            <input type="text" id="team_name" name="team_name" value="{{ team.team_name if team else '' }}" required>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Save Team</button>
+            <a href="{{ url_for('teams.list_teams') }}" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

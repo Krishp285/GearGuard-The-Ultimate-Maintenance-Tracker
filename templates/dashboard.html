@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - GearGuard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Dashboard Overview</h2>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Total Equipment</h3>
+        <p class="stat-number">{{ total_equipment }}</p>
+        <p class="stat-detail">{{ active_equipment }} active, {{ scrapped_equipment }} scrapped</p>
+    </div>
+    
+    <div class="stat-card">
+        <h3>Total Requests</h3>
+        <p class="stat-number">{{ total_requests }}</p>
+        <p class="stat-detail">{{ new_requests }} new, {{ in_progress_requests }} in progress</p>
+    </div>
+    
+    <div class="stat-card">
+        <h3>Completed Repairs</h3>
+        <p class="stat-number">{{ repaired_requests }}</p>
+    </div>
+    
+    <div class="stat-card {% if overdue_requests %}alert-card{% endif %}">
+        <h3>Overdue Requests</h3>
+        <p class="stat-number">{{ overdue_requests|length }}</p>
+        {% if overdue_requests %}
+        <p class="stat-detail">Requires attention!</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if overdue_requests %}
+<div class="overdue-section">
+    <h3>⚠️ Overdue Maintenance Requests</h3>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Equipment</th>
+                    <th>Scheduled Date</th>
+                    <th>Status</th>
+                    <th>Technician</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in overdue_requests %}
+                <tr class="overdue-row">
+                    <td>{{ req.subject }}</td>
+                    <td>{{ req.equipment.equipment_name }}</td>
+                    <td>{{ req.scheduled_date.strftime('%Y-%m-%d') }}</td>
+                    <td><span class="status-badge status-{{ req.status|lower|replace(' ', '-') }}">
+    {{ req.status }}
+</span>
+</td>
+                    <td>{{ req.assigned_technician.name if req.assigned_technician else 'Unassigned' }}</td>
+                    <td>
+                        <a href="{{ url_for('requests.edit', id=req.id) }}" class="btn-small">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="quick-actions">
+    <h3>Quick Actions</h3>
+    <div class="action-buttons">
+        <a href="{{ url_for('dashboard.kanban') }}" class="action-btn">
+            <span class="icon">📋</span>
+            <span>View Kanban Board</span>
+        </a>
+        <a href="{{ url_for('dashboard.calendar_view') }}" class="action-btn">
+            <span class="icon">📅</span>
+            <span>View Calendar</span>
+        </a>
+        <a href="{{ url_for('requests.create') }}" class="action-btn">
+            <span class="icon">➕</span>
+            <span>Create New Request</span>
+        </a>
+        <a href="{{ url_for('equipment.list_equipment') }}" class="action-btn">
+            <span class="icon">🔧</span>
+            <span>Manage Equipment</span>
+        </a>
+    </div>
+</div>
+{% endblock %}
